@@ -1,0 +1,12 @@
+{
+    "name": "docker-compose-frontend",
+    "version": "1.0.0",
+    "description": "Frontend for Docker Compose demo",
+    "scripts": {
+      "build": "mkdir -p dist && cp *.html *.css *.js dist/",
+      "start": "http-server dist -p 8080"
+    },
+    "devDependencies": {
+      "http-server": "^14.1.1"
+    }
+  }
