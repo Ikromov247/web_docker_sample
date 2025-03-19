@@ -4,7 +4,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend
     ports:
       - "80:80"
     volumes:
@@ -20,43 +19,49 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
     ports:
       - "3000:3000"
     volumes:
       - ./backend:/app
-      - /app/node_modules
+      - backend_node_modules:/app/node_modules
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/mydatabase
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=mydatabase
+      - DB_USER=dbuser
+      - DB_PASSWORD=dbpassword
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
 
   db:
-    image: postgres:14
-    container_name: sitedb
+    image: mariadb:10.6
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
     environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=mydatabase
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=mydatabase
+      - MYSQL_USER=dbuser
+      - MYSQL_PASSWORD=dbpassword
     ports:
-      - "5432:5432"
+      - "3306:3306"
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 5
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  mariadb_data:
+  backend_node_modules:

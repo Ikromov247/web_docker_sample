@@ -1,7 +1,7 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,44 +10,58 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Database connection
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
+// Database connection configuration
+const dbConfig = {
+    host: process.env.DB_HOST || 'db',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'dbuser',
+    password: process.env.DB_PASSWORD || 'dbpassword',
+    database: process.env.DB_NAME || 'mydatabase',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+};
 
-// Function to wait for postgres to be ready
-async function waitForPostgres(maxAttempts = 10, delay = 5000) {
+// Create a pool
+let pool;
+
+// Function to wait for MariaDB to be ready
+async function waitForMariaDB(maxAttempts = 10, delay = 5000) {
     let attempts = 0;
     while (attempts < maxAttempts) {
         try {
-            const client = await pool.connect();
-            console.log('Successfully connected to PostgreSQL');
-            client.release();
+            // Create the pool if it doesn't exist
+            if (!pool) {
+                pool = mysql.createPool(dbConfig);
+            }
+            
+            // Test the connection
+            const connection = await pool.getConnection();
+            console.log('Successfully connected to MariaDB');
+            connection.release();
             return true;
         } catch (err) {
             attempts++;
-            console.log(`PostgreSQL connection attempt ${attempts}/${maxAttempts} failed. Retrying in ${delay/1000} seconds...`);
+            console.log(`MariaDB connection attempt ${attempts}/${maxAttempts} failed. Retrying in ${delay/1000} seconds...`);
+            console.error('Connection error:', err.message);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-    throw new Error('Could not connect to PostgreSQL after multiple attempts');
+    throw new Error('Could not connect to MariaDB after multiple attempts');
 }
 
 // Initialize database
 async function initializeDb() {
-    // First wait for PostgreSQL to be ready
-    await waitForPostgres();
+    // First wait for MariaDB to be ready
+    await waitForMariaDB();
     
-    // Then initialize the database
-    let client;
     try {
-        client = await pool.connect();
         console.log('Creating tables...');
         
         // Create items table if it doesn't exist
-        await client.query(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS items (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 description TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -55,10 +69,10 @@ async function initializeDb() {
         `);
 
         // Insert some sample data if table is empty
-        const { rows } = await client.query('SELECT COUNT(*) FROM items');
+        const [rows] = await pool.query('SELECT COUNT(*) as count FROM items');
         
         if (parseInt(rows[0].count) === 0) {
-            await client.query(`
+            await pool.query(`
                 INSERT INTO items (name, description) VALUES
                 ('Item 1', 'This is the first item'),
                 ('Item 2', 'This is the second item'),
@@ -71,8 +85,6 @@ async function initializeDb() {
     } catch (error) {
         console.error('Error initializing database:', error);
         throw error; // Rethrow to handle in the calling function
-    } finally {
-        if (client) client.release();
     }
 }
 
@@ -83,7 +95,7 @@ app.get('/health', (req, res) => {
 
 app.get('/items', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT * FROM items ORDER BY id');
+        const [rows] = await pool.query('SELECT * FROM items ORDER BY id');
         res.json(rows);
     } catch (error) {
         console.error('Error fetching items:', error);
@@ -99,10 +111,12 @@ app.post('/items', async (req, res) => {
     }
     
     try {
-        const { rows } = await pool.query(
-            'INSERT INTO items (name, description) VALUES ($1, $2) RETURNING *',
+        const [result] = await pool.query(
+            'INSERT INTO items (name, description) VALUES (?, ?)',
             [name, description]
         );
+        
+        const [rows] = await pool.query('SELECT * FROM items WHERE id = ?', [result.insertId]);
         res.status(201).json(rows[0]);
     } catch (error) {
         console.error('Error creating item:', error);
