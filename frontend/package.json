@@ -1,12 +1,14 @@
 {
-    "name": "docker-compose-frontend",
-    "version": "1.0.0",
-    "description": "Frontend for Docker Compose demo",
-    "scripts": {
-      "build": "mkdir -p dist && cp *.html *.css *.js dist/",
-      "start": "http-server dist -p 8080"
-    },
-    "devDependencies": {
-      "http-server": "^14.1.1"
-    }
+  "name": "docker-compose-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Docker Compose demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^2.0.6"
   }
+}

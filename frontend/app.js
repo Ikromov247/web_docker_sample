@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusElement = document.getElementById('status');
     const fetchButton = document.getElementById('fetch-data');
     const dataContainer = document.getElementById('data-container');
+    
+    // Get API URL from environment or use a default
+    const apiUrl = '/api';
 
     // Check backend connection on page load
     checkBackendStatus();
@@ -13,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to check if the backend is reachable
     async function checkBackendStatus() {
         try {
-            const response = await fetch('/api/health');
+            const response = await fetch(`${apiUrl}/health`);
             
             if (response.ok) {
                 statusElement.textContent = 'Connected to backend successfully!';
@@ -34,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dataContainer.textContent = 'Loading...';
         
         try {
-            const response = await fetch('/api/items');
+            const response = await fetch(`${apiUrl}/items`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);

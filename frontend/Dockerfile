@@ -1,23 +1,32 @@
-# Build stage
-FROM node:18-alpine as build
+FROM ubuntu:24.04
 
+# Set non-interactive installation mode
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Node.js, npm and other dependencies
+RUN apt-get update && \
+    apt-get install -y curl gnupg && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Check Node.js and npm versions
+RUN node -v && npm -v
+
+# Create app directory
 WORKDIR /app
 
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
 
+# Make sure node_modules isn't replaced by host volume
+VOLUME ["/app/node_modules"]
+
+# Copy application code
 COPY . .
-RUN npm run build
 
-# Production stage with Nginx
-FROM nginx:alpine
+EXPOSE 3000
 
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy custom nginx config if needed
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "start"]
