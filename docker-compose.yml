@@ -62,10 +62,11 @@ services:
       - dbnetwork
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
-      interval: 5s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
 networks:
   app-network:
