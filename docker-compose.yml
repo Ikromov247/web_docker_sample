@@ -71,7 +71,7 @@ networks:
   app-network:
     driver: bridge
   dbnetwork:
-    driver: external
+    external: true
 
 volumes:
   mariadb_data:
