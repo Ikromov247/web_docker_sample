@@ -4,6 +4,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: web_docker_sample-frontend-1
     ports:
       - "80:3000"
     volumes:
@@ -23,6 +24,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: web_docker_sample-backend-1
     ports:
       - "3000:3000"
     volumes:
@@ -47,6 +49,7 @@ services:
     image: mariadb:10.6
     volumes:
       - mariadb_data:/var/lib/mysql
+    container_name: web_docker_sample-db-1
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=mydatabase
