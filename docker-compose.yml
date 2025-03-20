@@ -51,7 +51,7 @@ services:
       - mariadb_data:/var/lib/mysql
     container_name: web_docker_sample-db-1
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_ROOT_PASSWORD=root_password
       - MYSQL_DATABASE=mydatabase
       - MYSQL_USER=dbuser
       - MYSQL_PASSWORD=dbpassword
