@@ -1,0 +1,29 @@
+name: Deploy website
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+
+
+jobs:
+    deploy:
+      runs-on: self-hosted
+      
+      steps:
+      - uses: actions/checkout@v4
+        timeout-minutes: 1
+
+      - name: Stop and remove containers
+        run: |
+            containers=$(docker ps --filter name=web_docker_sample* -aq)
+            if [ -n "$containers" ]; then
+                docker stop $containers
+                docker rm $containers
+            else
+                echo "No containers to stop or remove"
+            fi
+        
+      - name: Deploy
+        run: docker compose up -d
+        
