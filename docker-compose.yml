@@ -27,6 +27,8 @@ services:
     container_name: web_docker_sample-backend-1
     ports:
       - "3000:3000"
+      - "8080: 8080"
+    
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
